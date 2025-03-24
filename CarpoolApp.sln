@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35828.75 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "carpoolapp.client", "carpoolapp.client\carpoolapp.client.esproj", "{AA558394-6C7B-2D02-3759-4AA609999B57}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarpoolApp.Server", "CarpoolApp.Server\CarpoolApp.Server.csproj", "{FAF2EEB6-B525-46B8-B806-81645F232AE7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AA558394-6C7B-2D02-3759-4AA609999B57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA558394-6C7B-2D02-3759-4AA609999B57}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA558394-6C7B-2D02-3759-4AA609999B57}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{AA558394-6C7B-2D02-3759-4AA609999B57}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA558394-6C7B-2D02-3759-4AA609999B57}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA558394-6C7B-2D02-3759-4AA609999B57}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{FAF2EEB6-B525-46B8-B806-81645F232AE7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FAF2EEB6-B525-46B8-B806-81645F232AE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FAF2EEB6-B525-46B8-B806-81645F232AE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FAF2EEB6-B525-46B8-B806-81645F232AE7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {367FAD17-64D0-4979-B84D-736EEF3FF065}
+	EndGlobalSection
+EndGlobal
