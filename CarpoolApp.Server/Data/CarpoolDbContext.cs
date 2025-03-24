@@ -27,6 +27,11 @@ namespace CarpoolApp.Server.Data
 
             // Configure relationships and constraints
 
+                // Define composite primary key for ConversationMember
+            modelBuilder.Entity<ConversationMember>()
+                .HasKey(cm => new { cm.ConversationId, cm.UserId });
+
+
             // User -> Driver (One-to-One)
             modelBuilder.Entity<User>()
                 .HasOne(u => u.Driver)
@@ -55,12 +60,12 @@ namespace CarpoolApp.Server.Data
                 .HasForeignKey(r => r.DriverId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Vehicle -> Ride (One-to-Many)
+            // Vehicle -> Ride (One-to-Many) (Restrict delete to prevent multiple cascade paths)
             modelBuilder.Entity<Vehicle>()
                 .HasMany(v => v.Rides)
                 .WithOne(r => r.Vehicle)
                 .HasForeignKey(r => r.VehicleId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Ride -> RideRequest (One-to-Many)
             modelBuilder.Entity<Ride>()
@@ -74,7 +79,7 @@ namespace CarpoolApp.Server.Data
                 .HasMany(p => p.RideRequests)
                 .WithOne(rr => rr.Passenger)
                 .HasForeignKey(rr => rr.PassengerId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict); // Change to Restrict
 
             // Conversation -> ConversationMember (One-to-Many)
             modelBuilder.Entity<Conversation>()
