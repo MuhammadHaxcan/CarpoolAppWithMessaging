@@ -184,8 +184,8 @@ namespace CarpoolApp.Server.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<decimal>("PricePerSeat")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int>("PricePerSeat")
+                        .HasColumnType("int");
 
                     b.PrimitiveCollection<string>("RouteStops")
                         .IsRequired()

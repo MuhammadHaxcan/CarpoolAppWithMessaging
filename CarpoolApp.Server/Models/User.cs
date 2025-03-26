@@ -14,8 +14,8 @@ namespace CarpoolApp.Server.Models
 
         [Required(ErrorMessage = "University Email is required.")]
         [EmailAddress(ErrorMessage = "Invalid email format.")]
-        [RegularExpression(@"^[a-zA-Z0-9._%+-]+@([a-zA-Z0-9.-]+\.)?(edu|ac)\.([a-zA-Z]{2,})$",
-            ErrorMessage = "Only university email addresses are allowed.")]
+        //[RegularExpression(@"^[a-zA-Z0-9._%+-]+@([a-zA-Z0-9.-]+\.)?(edu|ac)\.([a-zA-Z]{2,})$",
+        //    ErrorMessage = "Only university email addresses are allowed.")]
         public string UniversityEmail { get; set; }
 
         [Required(ErrorMessage = "Password is required.")]

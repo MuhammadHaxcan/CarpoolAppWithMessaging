@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace CarpoolApp.Server.Migrations
 {
     /// <inheritdoc />
-    public partial class initial2 : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -122,7 +122,7 @@ namespace CarpoolApp.Server.Migrations
                     RouteStops = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
                     DepartureTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     AvailableSeats = table.Column<int>(type: "int", nullable: false),
-                    PricePerSeat = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    PricePerSeat = table.Column<int>(type: "int", nullable: false),
                     DriverId = table.Column<int>(type: "int", nullable: false),
                     VehicleId = table.Column<int>(type: "int", nullable: false)
                 },

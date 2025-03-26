@@ -29,8 +29,8 @@ namespace CarpoolApp.Server.Models
         public int AvailableSeats { get; set; }
 
         [Required(ErrorMessage = "Price per seat is required.")]
-        [Range(0.01, 1000.00, ErrorMessage = "Price per seat must be between 0.01 and 1000.00.")]
-        public decimal PricePerSeat { get; set; }
+        [Range(150, 500 , ErrorMessage = "Price per seat must be between 150 and 500.")]
+        public int PricePerSeat { get; set; }
 
         [Required(ErrorMessage = "Driver ID is required.")]
         public int DriverId { get; set; }
