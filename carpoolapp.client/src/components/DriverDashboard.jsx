@@ -12,7 +12,6 @@ export default function DriverDashboard() {
         const token = localStorage.getItem('token');
         const role = localStorage.getItem('role');
 
-        // Redirect if not authenticated or wrong role
         if (!token || role !== 'driver') {
             navigate('/');
             return;
@@ -45,6 +44,13 @@ export default function DriverDashboard() {
             <h2>Driver Dashboard</h2>
             <p>{message}</p>
             <p><strong>Timestamp:</strong> {new Date(timestamp).toLocaleString()}</p>
+
+            <div style={{ marginTop: '20px' }}>
+                <button onClick={() => navigate('/create-ride')}>Create Ride</button>
+                <button onClick={() => navigate('/driver-profile')} style={{ marginLeft: '10px' }}>
+                    View Profile / Manage Vehicles
+                </button>
+            </div>
         </div>
     );
 }
