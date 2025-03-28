@@ -6,7 +6,7 @@ namespace CarpoolApp.Server.Models
 {
     public class Ride
     {
-        public int RideId { get; set; } 
+        public int RideId { get; set; }
 
         [Required(ErrorMessage = "Origin is required.")]
         [StringLength(100, ErrorMessage = "Origin cannot exceed 100 characters.")]
@@ -18,8 +18,8 @@ namespace CarpoolApp.Server.Models
 
         public RideStatus Status { get; set; } = RideStatus.Scheduled;
 
-        [MaxLength(10, ErrorMessage = "A maximum of 10 route stops is allowed.")]
-        public List<string> RouteStops { get; set; } = new List<string>();
+        // Changed to string with custom formatting/parsing
+        public string RouteStops { get; set; }
 
         [Required(ErrorMessage = "Departure time is required.")]
         public DateTime DepartureTime { get; set; }
@@ -29,8 +29,8 @@ namespace CarpoolApp.Server.Models
         public int AvailableSeats { get; set; }
 
         [Required(ErrorMessage = "Price per seat is required.")]
-        [Range(150, 500 , ErrorMessage = "Price per seat must be between 150 and 500.")]
-        public int PricePerSeat { get; set; }
+        [Range(150, 500, ErrorMessage = "Price per seat must be between 150 and 500.")]
+        public decimal PricePerSeat { get; set; } // Changed to decimal for monetary value
 
         [Required(ErrorMessage = "Driver ID is required.")]
         public int DriverId { get; set; }

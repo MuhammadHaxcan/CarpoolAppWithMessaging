@@ -26,7 +26,8 @@ export default function LoginPage() {
             if (res.data.role === 'driver') {
                 navigate('/driver-dashboard');
             } else {
-                alert('Passenger login is not yet implemented.');
+                navigate('/passenger-dashboard');
+                //alert('Passenger login is not yet implemented.');
             }
 
         } catch (err) {
