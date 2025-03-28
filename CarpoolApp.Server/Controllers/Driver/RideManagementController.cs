@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace CarpoolApp.Server.Controllers.Driver
 {
@@ -40,7 +41,7 @@ namespace CarpoolApp.Server.Controllers.Driver
             {
                 Origin = dto.Origin,
                 Destination = dto.Destination,
-                RouteStops = dto.RouteStops,
+                RouteStops = JsonSerializer.Serialize(dto.RouteStops),
                 DepartureTime = dto.DepartureTime.ToUniversalTime(),
                 VehicleId = dto.VehicleId,
                 DriverId = driver.DriverId,

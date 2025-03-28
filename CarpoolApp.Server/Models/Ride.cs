@@ -18,8 +18,7 @@ namespace CarpoolApp.Server.Models
 
         public RideStatus Status { get; set; } = RideStatus.Scheduled;
 
-        [MaxLength(10, ErrorMessage = "A maximum of 10 route stops is allowed.")]
-        public List<string> RouteStops { get; set; } = new List<string>();
+        public string RouteStops { get; set; }
 
         [Required(ErrorMessage = "Departure time is required.")]
         public DateTime DepartureTime { get; set; }

@@ -30,6 +30,7 @@ export default function CreateRidePage() {
                 setVehicles(res.data);
             } catch (err) {
                 console.error('Error fetching vehicles:', err);
+                console.log(err);
             }
         };
 
@@ -53,7 +54,7 @@ export default function CreateRidePage() {
             const payload = {
                 origin,
                 destination,
-                routeStops: routeStops.filter(s => s.trim() !== ''),
+                routeStops: routeStops.filter(s => s.trim() !== ''), // convert to JSON string
                 departureTime: new Date(departureTime),
                 vehicleId: parseInt(vehicleId),
                 availableSeats: parseInt(availableSeats),

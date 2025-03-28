@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CarpoolApp.Server.Migrations
 {
     [DbContext(typeof(CarpoolDbContext))]
-    [Migration("20250325153502_init")]
-    partial class init
+    [Migration("20250328232635_updatelengthroutestop")]
+    partial class updatelengthroutestop
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -190,10 +190,9 @@ namespace CarpoolApp.Server.Migrations
                     b.Property<int>("PricePerSeat")
                         .HasColumnType("int");
 
-                    b.PrimitiveCollection<string>("RouteStops")
+                    b.Property<string>("RouteStops")
                         .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
                         .IsRequired()
