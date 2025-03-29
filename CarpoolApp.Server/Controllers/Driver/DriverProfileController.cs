@@ -20,12 +20,14 @@ namespace CarpoolApp.Server.Controllers.Driver
             _context = context;
         }
 
-        // POST: api/driver/profile/vehicle
         [HttpPost("vehicle")]
         public async Task<IActionResult> AddVehicle([FromBody] CreateVehicleDto dto)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                return BadRequest(new { success = false, message = "Validation failed", errors });
+            }
 
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var driver = await _context.Drivers.FirstOrDefaultAsync(d => d.UserId == userId);
@@ -46,6 +48,8 @@ namespace CarpoolApp.Server.Controllers.Driver
 
             return Ok(new { success = true, message = "Vehicle added successfully." });
         }
+
+
 
         // Optional: GET all vehicles added by the driver
         [HttpGet("vehicles")]

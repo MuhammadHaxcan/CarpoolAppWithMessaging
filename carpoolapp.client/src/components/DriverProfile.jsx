@@ -37,8 +37,15 @@ export default function DriverProfile() {
     };
 
     const handleAddVehicle = async () => {
+        if (!make.trim() || !model.trim() || !numberPlate.trim()) {
+            alert('All fields are required!');
+            return;
+        }
+
+        console.log('Sending Data:', { make, model, numberPlate });
+
         try {
-            await axios.post('/api/driver/profile/vehicle', {
+            const response = await axios.post('/api/driver/profile/vehicle', {
                 make,
                 model,
                 numberPlate
@@ -46,15 +53,19 @@ export default function DriverProfile() {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
+            console.log('Response:', response.data);
+
             setMake('');
             setModel('');
             setNumberPlate('');
-            fetchVehicles(); // refresh list
+            fetchVehicles(); // Refresh list
         } catch (err) {
+            console.error('Error Response:', err.response?.data);
             alert(err.response?.data?.message || 'Failed to add vehicle.');
-            console.log(err);
         }
     };
+
+
 
     return (
         <div>
