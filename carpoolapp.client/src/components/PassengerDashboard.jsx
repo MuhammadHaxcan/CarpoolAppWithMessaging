@@ -9,10 +9,10 @@ export default function PassengerDashboard() {
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const token = localStorage.getItem("token");
-        const role = localStorage.getItem("role");
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
 
+    useEffect(() => {
         if (!token || role !== "passenger") {
             navigate("/");
             return;
@@ -35,67 +35,71 @@ export default function PassengerDashboard() {
         fetchAvailableRides();
     }, [navigate]);
 
-    const handleSearch = async () => {
-        if (!searchTerm.trim()) {
-            setSearchResults([]);
-            return;
-        }
+    // Debounced search effect
+    useEffect(() => {
+        const delayDebounce = setTimeout(() => {
+            if (searchTerm.trim() === "") {
+                setSearchResults([]);
+                return;
+            }
 
-        try {
-            const token = localStorage.getItem("token");
+            const fetchSearchResults = async () => {
+                try {
+                    const res = await axios.get(`/api/ridesearch/search?query=${encodeURIComponent(searchTerm.trim())}`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
 
-            const res = await axios.get(`/api/ridesearch/search?query=${searchTerm.trim()}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+                    setSearchResults(res.data);
+                } catch (err) {
+                    console.error("Error searching for rides:", err);
+                    setSearchResults([]);
+                }
+            };
 
-            setSearchResults(res.data);
-        } catch (err) {
-            console.error("Error searching for rides:", err);
-            setSearchResults([]);
-        }
-    };
+            fetchSearchResults();
+        }, 300); // delay in ms
+
+        return () => clearTimeout(delayDebounce);
+    }, [searchTerm]);
 
     if (loading) return <p>Loading available rides...</p>;
 
     const displayRides = searchResults.length > 0 ? searchResults : rides;
 
     return (
-        <div style={{ color: "white", background: "#222", padding: "20px", borderRadius: "10px" }}>
+        <div>
             <h2>Passenger Dashboard</h2>
 
-            {/* Unified Search Box */}
             <div>
                 <input
                     type="text"
                     placeholder="Search by source, destination, or route stops"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    style={{ padding: "10px", width: "70%", marginRight: "10px" }}
                 />
-                <button onClick={handleSearch} style={{ padding: "10px", cursor: "pointer" }}>Search</button>
             </div>
 
             <h3>Available Rides</h3>
             {displayRides.length > 0 ? (
                 displayRides.map((ride, index) => (
-                    <div key={index} style={{ marginBottom: "10px", padding: "10px", border: "1px solid #ccc", borderRadius: "5px" }}>
-                        <strong>From:</strong> {ride.origin || "Unknown"} → <strong>To:</strong> {ride.destination || "Unknown"} <br />
-                        <strong>Departure:</strong> {ride.departureTime ? new Date(ride.departureTime).toLocaleString() : "Invalid Date"} <br />
-                        <strong>Seats:</strong> {ride.availableSeats || 0} | <strong>Price:</strong> {ride.pricePerSeat ? `$${ride.pricePerSeat} USD` : "N/A USD"} <br />
-                        <strong>Driver:</strong> {ride.driverName || "Unknown"} | <strong>Vehicle:</strong> {ride.vehicleModel || "Unknown"} <br />
+                    <div key={index}>
+                        <p><strong>From:</strong> {ride.origin || "Unknown"} → <strong>To:</strong> {ride.destination || "Unknown"}</p>
+                        <p><strong>Departure:</strong> {ride.departureTime ? new Date(ride.departureTime).toLocaleString() : "Invalid Date"}</p>
+                        <p><strong>Seats:</strong> {ride.availableSeats || 0}</p>
+                        <p><strong>Price:</strong> {ride.pricePerSeat ? `${ride.pricePerSeat} PKR` : "N/A"}</p>
+                        <p><strong>Driver:</strong> {ride.driverName || "Unknown"}</p>
+                        <p><strong>Vehicle:</strong> {ride.vehicleModel || "Unknown"}</p>
 
-                        {/* Route Stops Display */}
-                        <strong>Route Stops:</strong>
+                        <p><strong>Route Stops:</strong></p>
                         {Array.isArray(ride.routeStops) && ride.routeStops.length > 0 ? (
-                            <ul style={{ listStyleType: "circle", marginLeft: "20px" }}>
+                            <ul>
                                 {ride.routeStops.map((stop, i) => (
                                     <li key={i}>{stop}</li>
                                 ))}
                             </ul>
                         ) : (
-                            <p style={{ marginLeft: "20px", color: "gray" }}>No route stops available</p>
+                            <p>No route stops available</p>
                         )}
-
                         <hr />
                     </div>
                 ))
