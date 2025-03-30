@@ -55,5 +55,33 @@ namespace CarpoolApp.Server.Controllers.Driver
 
             return Ok(new { success = true, message = "Ride created successfully." });
         }
+
+        [HttpGet("accepted-passengers/{rideId}")]
+        public async Task<IActionResult> GetAcceptedPassengers(int rideId)
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var driver = await _context.Drivers.FirstOrDefaultAsync(d => d.UserId == userId);
+            if (driver == null)
+                return Unauthorized("Driver not found.");
+
+            var ride = await _context.Rides.FirstOrDefaultAsync(r => r.RideId == rideId && r.DriverId == driver.DriverId);
+            if (ride == null)
+                return NotFound("Ride not found or not associated with this driver.");
+
+            var acceptedPassengers = await _context.RideRequests
+                .Where(r => r.RideId == rideId && r.Status == RideRequestStatus.Accepted)
+                .Include(r => r.Passenger)
+                    .ThenInclude(p => p.User)
+                .Select(r => new
+                {
+                    requestId = r.RideRequestId,
+                    pickupLocation = r.PickupLocation,
+                    dropoffLocation = r.DropoffLocation,
+                    passengerName = r.Passenger.User.FullName
+                })
+                .ToListAsync();
+
+            return Ok(acceptedPassengers);
+        }
     }
 }

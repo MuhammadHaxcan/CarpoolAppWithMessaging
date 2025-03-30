@@ -3,11 +3,9 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 export default function DriverDashboard() {
-    const [message, setMessage] = useState("");
     const [timestamp, setTimestamp] = useState("");
-    const [currentRide, setCurrentRide] = useState(null);
+    const [ridesWithRequests, setRidesWithRequests] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [incomingRequests, setIncomingRequests] = useState([]);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -19,109 +17,113 @@ export default function DriverDashboard() {
             return;
         }
 
-        const fetchDashboard = async () => {
+        const fetchRidesAndRequests = async () => {
             try {
-                const res = await axios.get("/api/driverdashboard", {
+                const res = await axios.get("/api/driverdashboard/rides-with-requests", {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
-                setMessage(res.data.message);
-                setTimestamp(res.data.timestamp);
-                setCurrentRide(res.data.currentRide);
+                const rides = res.data.result;
+                const timestamp = res.data.timestamp;
+
+                const ridesWithAccepted = await Promise.all(
+                    rides.map(async (ride) => {
+                        const acceptedRes = await axios.get(
+                            `/api/ridemanagement/accepted-passengers/${ride.rideId}`,
+                            { headers: { Authorization: `Bearer ${token}` } }
+                        );
+                        return {
+                            ...ride,
+                            acceptedPassengers: acceptedRes.data,
+                        };
+                    })
+                );
+
+                setTimestamp(timestamp);
+                setRidesWithRequests(ridesWithAccepted);
                 setLoading(false);
             } catch (err) {
-                console.error("Unauthorized or error fetching dashboard:", err);
-                navigate("/");
+                console.error("Error fetching rides and accepted passengers:", err);
+                setLoading(false);
             }
         };
 
-        const fetchIncomingRequests = async () => {
-            try {
-                const res = await axios.get("/api/riderequest/incoming-requests", {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-
-                console.log("Incoming Requests:", res.data); // Debugging output
-                setIncomingRequests(res.data);
-            } catch (err) {
-                console.error("Error fetching ride requests:", err);
-            }
-        };
-
-        fetchIncomingRequests();
-        fetchDashboard();
+        fetchRidesAndRequests();
     }, [navigate]);
 
     const handleRideRequest = async (requestId, action) => {
         const token = localStorage.getItem("token");
-
         try {
-            const url = `/api/riderequest/${action}/${requestId}`; // Ensure correct route
-            console.log("Making request to:", url); // Debugging Output
-
-            const res = await axios.post(url, {}, {
+            await axios.post(`/api/riderequest/${action}/${requestId}`, {}, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
-            console.log("Response:", res.data);
-
-            // Remove the request from the UI after accepting/rejecting
-            setIncomingRequests((prevRequests) =>
-                prevRequests.filter((req) => req.requestId !== requestId)
+            setRidesWithRequests(prev =>
+                prev.map(ride => ({
+                    ...ride,
+                    requests: ride.requests.filter(req => req.requestId !== requestId)
+                }))
             );
         } catch (err) {
-            console.error(`Error ${action}ing ride request:`, err.response?.data || err.message);
+            console.error(`Error ${action}ing request:`, err.response?.data || err.message);
         }
     };
-
 
     if (loading) return <p>Loading dashboard...</p>;
 
     return (
         <div>
             <h2>Driver Dashboard</h2>
-            <p>{message}</p>
-            <p>
-                <strong>Timestamp:</strong> {new Date(timestamp).toLocaleString()}
-            </p>
+            <p><strong>Timestamp:</strong> {new Date(timestamp).toLocaleString()}</p>
 
-            {currentRide ? (
-                <div style={{ border: "1px solid #ccc", padding: "10px", marginTop: "20px", borderRadius: "8px" }}>
-                    <h3>Current Offered Ride</h3>
-                    <p><strong>From:</strong> {currentRide.origin}</p>
-                    <p><strong>To:</strong> {currentRide.destination}</p>
-                    <p><strong>Departure:</strong> {new Date(currentRide.departureTime).toLocaleString()}</p>
-                    <p><strong>Vehicle:</strong> {currentRide.make} {currentRide.model} ({currentRide.numberPlate})</p>
-                    <p><strong>Seats:</strong> {currentRide.availableSeats}</p>
-                    <p><strong>Price/Seat:</strong> Rs. {currentRide.pricePerSeat}</p>
-                </div>
+            <h3>Your Rides & Incoming Requests</h3>
+            {ridesWithRequests.length === 0 ? (
+                <p><i>No rides offered yet.</i></p>
             ) : (
-                <p style={{ marginTop: "20px" }}><i>No active ride currently.</i></p>
-            )}
+                ridesWithRequests.map((ride) => (
+                    <div key={ride.rideId} style={{ border: "1px solid #ccc", padding: "15px", marginBottom: "20px" }}>
+                        <h4>Ride ID: {ride.rideId}</h4>
+                        <p><strong>From:</strong> {ride.origin}</p>
+                        <p><strong>To:</strong> {ride.destination}</p>
+                        <p><strong>Departure:</strong> {new Date(ride.departureTime).toLocaleString()}</p>
+                        <p><strong>Vehicle:</strong> {ride.vehicle}</p>
+                        <p><strong>Seats:</strong> {ride.availableSeats}</p>
+                        <p><strong>Price/Seat:</strong> Rs. {ride.pricePerSeat}</p>
 
-            {/* Incoming Ride Requests */}
-            <div style={{ marginTop: "30px" }}>
-                <h3>Incoming Ride Requests</h3>
-                {incomingRequests.length > 0 ? (
-                    <ul>
-                        {incomingRequests.map((request) => (
-                            <li key={request.requestId} style={{ border: "1px solid #ddd", padding: "10px", marginBottom: "10px" }}>
-                                <p><strong>Passenger:</strong> {request.passengerName || "N/A"}</p>
-                                <p><strong>Pickup:</strong> {request.pickupLocation || "N/A"}</p>
-                                <p><strong>Dropoff:</strong> {request.dropoffLocation || "N/A"}</p>
-                                <button onClick={() => handleRideRequest(request.requestId, "accept")} style={{ marginRight: "10px" }}>
-                                    Accept
-                                </button>
-                                <button onClick={() => handleRideRequest(request.requestId, "reject")} style={{ background: "red", color: "white" }}>
-                                    Reject
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p><i>No incoming ride requests.</i></p>
-                )}
-            </div>
+                        <h5>Accepted Passengers</h5>
+                        {ride.acceptedPassengers?.length > 0 ? (
+                            ride.acceptedPassengers.map((passenger) => (
+                                <div key={passenger.requestId} style={{ borderBottom: "1px solid #eee", paddingBottom: "8px" }}>
+                                    <p><strong>Passenger:</strong> {passenger.passengerName}</p>
+                                    <p><strong>Pickup:</strong> {passenger.pickupLocation}</p>
+                                    <p><strong>Dropoff:</strong> {passenger.dropoffLocation}</p>
+                                </div>
+                            ))
+                        ) : (
+                            <p><i>No accepted passengers yet.</i></p>
+                        )}
+
+                        <h5 style={{ marginTop: "15px" }}>Incoming Requests</h5>
+                        {ride.requests.length === 0 ? (
+                            <p><i>No pending requests for this ride.</i></p>
+                        ) : (
+                            ride.requests.map(req => (
+                                <div key={req.requestId} style={{ borderTop: "1px solid #eee", paddingTop: "10px", marginTop: "10px" }}>
+                                    <p><strong>Passenger:</strong> {req.passengerName}</p>
+                                    <p><strong>Pickup:</strong> {req.pickupLocation}</p>
+                                    <p><strong>Dropoff:</strong> {req.dropoffLocation}</p>
+                                    <button onClick={() => handleRideRequest(req.requestId, "accept")} style={{ marginRight: "10px" }}>
+                                        Accept
+                                    </button>
+                                    <button onClick={() => handleRideRequest(req.requestId, "reject")} style={{ background: "red", color: "white" }}>
+                                        Reject
+                                    </button>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                ))
+            )}
 
             <div style={{ marginTop: "20px" }}>
                 <button onClick={() => navigate("/create-ride")}>Create Ride</button>

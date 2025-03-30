@@ -4,6 +4,7 @@ using System.Security.Claims;
 using CarpoolApp.Server.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 [Authorize(Roles = "driver")]
 [Route("api/[controller]")]
@@ -17,39 +18,65 @@ public class DriverDashboardController : ControllerBase
         _context = context;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetDashboard()
+
+    [HttpGet("rides-with-requests")]
+    public async Task<IActionResult> GetRidesWithRequests()
     {
-        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-        var driver = await _context.Drivers
-            .Include(d => d.Rides)
-            .FirstOrDefaultAsync(d => d.UserId == userId);
-
-        if (driver == null)
-            return NotFound("Driver not found.");
-
-        var currentRide = await _context.Rides
-            .Where(r => r.DriverId == driver.DriverId && r.Status == RideStatus.Scheduled)
-            .OrderByDescending(r => r.DepartureTime)
-            .Select(r => new
-            {
-                r.RideId,
-                r.Origin,
-                r.Destination,
-                r.DepartureTime,
-                r.AvailableSeats,
-                r.PricePerSeat,
-                r.Vehicle.Make,
-                r.Vehicle.Model,
-                r.Vehicle.NumberPlate,
-            })
-            .FirstOrDefaultAsync();
-
-        return Ok(new
+        try
         {
-            message = "Welcome to the Driver Dashboard!",
-            timestamp = DateTime.UtcNow,
-            currentRide
-        });
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var driver = await _context.Drivers
+                .FirstOrDefaultAsync(d => d.UserId == userId);
+
+            if (driver == null)
+                return NotFound("Driver not found.");
+
+            var rides = await _context.Rides
+                .Where(r => r.DriverId == driver.DriverId)
+                .Include(r => r.Vehicle)
+                .OrderByDescending(r => r.DepartureTime)
+                .ToListAsync();
+
+            var result = new List<object>();
+
+            foreach (var ride in rides)
+            {
+                var requests = await _context.RideRequests
+                    .Where(r => r.RideId == ride.RideId && r.Status == RideRequestStatus.Pending)
+                    .Include(r => r.Passenger)
+                        .ThenInclude(p => p.User)
+                    .Select(r => new
+                    {
+                        requestId = r.RideRequestId,
+                        pickupLocation = r.PickupLocation,
+                        dropoffLocation = r.DropoffLocation,
+                        passengerName = r.Passenger.User.FullName
+                    })
+                    .ToListAsync();
+
+                result.Add(new
+                {
+                    rideId = ride.RideId,
+                    origin = ride.Origin,
+                    destination = ride.Destination,
+                    departureTime = ride.DepartureTime,
+                    availableSeats = ride.AvailableSeats,
+                    pricePerSeat = ride.PricePerSeat,
+                    vehicle = $"{ride.Vehicle?.Make} {ride.Vehicle?.Model}",
+                    requests = requests
+                });
+            }
+
+            return Ok(new
+            {
+                timestamp = DateTime.UtcNow,
+                result
+            }
+            );
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Internal server error", error = ex.Message });
+        }
     }
 }
