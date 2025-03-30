@@ -39,7 +39,7 @@ namespace CarpoolApp.Server.Controllers.Passenger
                         r.RideId,
                         r.Origin,
                         r.Destination,
-                        DepartureTime = r.DepartureTime,// ISO 8601 format
+                        DepartureTime = r.DepartureTime,
                         r.AvailableSeats,
                         r.PricePerSeat,
                         DriverName = r.Driver?.User?.FullName ?? "Unknown Driver",
