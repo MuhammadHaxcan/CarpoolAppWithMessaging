@@ -6,6 +6,7 @@ export default function PassengerDashboard() {
     const [rides, setRides] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [loading, setLoading] = useState(true);
+    const [requestStatuses, setRequestStatuses] = useState({}); // Track ride request status
     const [pickupLocation, setPickupLocation] = useState("");
     const [dropoffLocation, setDropoffLocation] = useState("");
     const [searchResults, setSearchResults] = useState([]);
@@ -68,7 +69,7 @@ export default function PassengerDashboard() {
                 PickupLocation: pickupLocation,
                 DropoffLocation: dropoffLocation,
                 Source: origin,
-                Destination: destination,
+                Destination: destination
             };
 
             const res = await axios.post("/api/booking/request-ride", requestBody, {

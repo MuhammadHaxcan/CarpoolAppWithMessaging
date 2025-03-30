@@ -80,7 +80,7 @@ namespace CarpoolApp.Server.Controllers.Passenger
                 Console.WriteLine("No available rides found.");
             }
 
-            return Ok(availableRides);
+                return Ok(availableRides);
+            }
         }
-    }
 }
