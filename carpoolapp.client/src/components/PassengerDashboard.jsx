@@ -6,11 +6,10 @@ export default function PassengerDashboard() {
     const [rides, setRides] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [loading, setLoading] = useState(true);
-    const [requestStatuses, setRequestStatuses] = useState({}); // Track ride request status
+    //const [requestStatuses, setRequestStatuses] = useState({}); // Track ride request status
     const [pickupLocation, setPickupLocation] = useState("");
     const [dropoffLocation, setDropoffLocation] = useState("");
-    const [searchResults, setSearchResults] = useState([]);
-    const [requestStatuses, setRequestStatuses] = useState({});
+    //const [searchResults, setSearchResults] = useState([]);
     const [rideLocationsMap, setRideLocationsMap] = useState({});
     const [customPickup, setCustomPickup] = useState(false);
     const [customDropoff, setCustomDropoff] = useState(false);

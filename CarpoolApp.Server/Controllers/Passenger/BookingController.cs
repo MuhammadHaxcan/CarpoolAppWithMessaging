@@ -110,40 +110,5 @@ namespace CarpoolApp.Server.Controllers.Passenger
             });
         }
 
-        [HttpGet("ride-locations/{rideId}")]
-        public async Task<IActionResult> GetRideLocations(int rideId)
-        {
-            var ride = await _context.Rides.FirstOrDefaultAsync(r => r.RideId == rideId);
-            if (ride == null)
-            {
-                return NotFound("Ride not found.");
-            }
-
-            // Deserialize RouteStops
-            List<string> routeStops = new List<string>();
-            if (!string.IsNullOrWhiteSpace(ride.RouteStops))
-            {
-                try
-                {
-                    routeStops = System.Text.Json.JsonSerializer.Deserialize<List<string>>(ride.RouteStops);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Failed to parse RouteStops: {ex.Message}");
-                }
-            }
-
-            // Compose full list
-            var allLocations = new List<string> { ride.Origin };
-            allLocations.AddRange(routeStops);
-            allLocations.Add(ride.Destination);
-
-            return Ok(new
-            {
-                RideId = ride.RideId,
-                Locations = allLocations
-            });
-        }
-
     }
 }
