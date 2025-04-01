@@ -29,7 +29,7 @@ namespace CarpoolApp.Server.Controllers.Driver
                 return BadRequest(new { success = false, message = "Validation failed", errors });
             }
 
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var driver = await _context.Drivers.FirstOrDefaultAsync(d => d.UserId == userId);
 
             if (driver == null)
@@ -49,9 +49,6 @@ namespace CarpoolApp.Server.Controllers.Driver
             return Ok(new { success = true, message = "Vehicle added successfully." });
         }
 
-
-
-        // Optional: GET all vehicles added by the driver
         [HttpGet("vehicles")]
         public async Task<IActionResult> GetVehicles()
         {

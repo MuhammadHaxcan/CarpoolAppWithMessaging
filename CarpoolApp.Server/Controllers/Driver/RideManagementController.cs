@@ -27,15 +27,19 @@ namespace CarpoolApp.Server.Controllers.Driver
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var driver = await _context.Drivers.FirstOrDefaultAsync(d => d.UserId == userId);
+            // Get driver in a single query with eager loading of vehicles
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
+            var driver = await _context.Drivers
+                .Include(d => d.Vehicles)
+                .FirstOrDefaultAsync(d => d.UserId == userId);
+
             if (driver == null)
                 return NotFound("Driver not found.");
 
-            var vehicle = await _context.Vehicles
-                .FirstOrDefaultAsync(v => v.VehicleId == dto.VehicleId && v.DriverId == driver.DriverId);
+            // Check vehicle ownership from the already loaded vehicles collection
+            var vehicle = driver.Vehicles?.FirstOrDefault(v => v.VehicleId == dto.VehicleId);
             if (vehicle == null)
-                return BadRequest("Invalid vehicle selection.");
+                return BadRequest("Invalid vehicle selection or vehicle not owned by this driver.");
 
             var ride = new Ride
             {
@@ -44,44 +48,46 @@ namespace CarpoolApp.Server.Controllers.Driver
                 RouteStops = JsonSerializer.Serialize(dto.RouteStops),
                 DepartureTime = dto.DepartureTime.ToUniversalTime(),
                 VehicleId = dto.VehicleId,
-
                 DriverId = driver.DriverId,
                 AvailableSeats = dto.AvailableSeats,
-                PricePerSeat = dto.PricePerSeat, 
+                PricePerSeat = dto.PricePerSeat,
             };
 
             _context.Rides.Add(ride);
             await _context.SaveChangesAsync();
 
-            return Ok(new { success = true, message = "Ride created successfully." });
+            return Ok(new { success = true, message = "Ride created successfully.", rideId = ride.RideId });
         }
 
         [HttpGet("accepted-passengers/{rideId}")]
         public async Task<IActionResult> GetAcceptedPassengers(int rideId)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var driver = await _context.Drivers.FirstOrDefaultAsync(d => d.UserId == userId);
-            if (driver == null)
-                return Unauthorized("Driver not found.");
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
 
-            var ride = await _context.Rides.FirstOrDefaultAsync(r => r.RideId == rideId && r.DriverId == driver.DriverId);
-            if (ride == null)
-                return NotFound("Ride not found or not associated with this driver.");
-
-            var acceptedPassengers = await _context.RideRequests
-                .Where(r => r.RideId == rideId && r.Status == RideRequestStatus.Accepted)
-                .Include(r => r.Passenger)
-                    .ThenInclude(p => p.User)
+            // Check ride ownership and get accepted passengers in a single query
+            var rideWithPassengers = await _context.Rides
+                .Where(r => r.RideId == rideId && r.Driver.UserId == userId)
                 .Select(r => new
                 {
-                    requestId = r.RideRequestId,
-                    pickupLocation = r.PickupLocation,
-                    dropoffLocation = r.DropoffLocation,
-                    passengerName = r.Passenger.User.FullName
+                    ride = r,
+                    acceptedPassengers = r.RideRequests
+                        .Where(req => req.Status == RideRequestStatus.Accepted)
+                        .Select(req => new
+                        {
+                            requestId = req.RideRequestId,
+                            pickupLocation = req.PickupLocation,
+                            dropoffLocation = req.DropoffLocation,
+                            passengerName = req.Passenger.User.FullName,
+                            passengerPhone = req.Passenger.User.PhoneNumber
+                        })
+                        .ToList()
                 })
-                .ToListAsync();
+                .FirstOrDefaultAsync();
 
-            return Ok(acceptedPassengers);
+            if (rideWithPassengers == null)
+                return NotFound("Ride not found or not associated with this driver.");
+
+            return Ok(rideWithPassengers.acceptedPassengers);
         }
     }
 }
