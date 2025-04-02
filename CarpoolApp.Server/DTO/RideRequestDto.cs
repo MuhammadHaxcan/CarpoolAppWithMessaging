@@ -2,6 +2,7 @@
 
 namespace CarpoolApp.Server.DTO
 {
+        //Ride RequestDto
         public class RideRequestDto
         {
             [Required(ErrorMessage = "Pickup location is required.")]
@@ -13,4 +14,12 @@ namespace CarpoolApp.Server.DTO
             [Required(ErrorMessage = "Ride ID is required.")]
             public int RideId { get; set; }
         }
+
+        // RideLocationsDto.cs
+        public class RideLocationsDto
+        {
+            public int RideId { get; set; }
+            public List<string> Locations { get; set; } = new List<string>();
+        }
+    
 }

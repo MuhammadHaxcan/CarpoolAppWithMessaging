@@ -94,7 +94,10 @@ export default function PassengerDashboard() {
 
     const displayRides = rides.filter((ride) =>
         ride.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ride.destination.toLowerCase().includes(searchTerm.toLowerCase())
+        ride.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (Array.isArray(ride.routeStops) && ride.routeStops.some(stop =>
+            stop.toLowerCase().includes(searchTerm.toLowerCase())
+        ))
     );
 
     return (

@@ -6,6 +6,7 @@ using CarpoolApp.Server.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using CarpoolApp.Server.DTO;
 
 namespace CarpoolApp.Server.Controllers.Passenger
 {
@@ -29,29 +30,26 @@ namespace CarpoolApp.Server.Controllers.Passenger
 
             query = query.Trim().ToLower();
 
-            var ridesRaw = _context.Rides
+            var matchingRides = _context.Rides
                 .Include(r => r.Driver)
                     .ThenInclude(d => d.User)
                 .Include(r => r.Vehicle)
                 .Where(r => r.Status == RideStatus.Scheduled && r.AvailableSeats > 0)
-                .ToList();
-
-            var matchingRides = ridesRaw
+                .AsEnumerable()
                 .Where(r =>
                     r.Origin.ToLower().Contains(query) ||
                     r.Destination.ToLower().Contains(query) ||
-                    (!string.IsNullOrEmpty(r.RouteStops) &&
-                     JsonSerializer.Deserialize<List<string>>(r.RouteStops)
-                         .Any(stop => stop.ToLower().Contains(query)))
+                    (r.RouteStops != null && JsonSerializer.Deserialize<List<string>>(r.RouteStops)?
+                        .Any(stop => stop.ToLower().Contains(query)) == true)
                 )
-                .Select(r => new
+                .Select(r => new RideSearchResultDto
                 {
-                    r.RideId,
-                    r.Origin,
-                    r.Destination,
+                    RideId = r.RideId,
+                    Origin = r.Origin,
+                    Destination = r.Destination,
                     DepartureTime = r.DepartureTime.ToString("o"),
-                    r.AvailableSeats,
-                    r.PricePerSeat,
+                    AvailableSeats = r.AvailableSeats,
+                    PricePerSeat = r.PricePerSeat,
                     DriverName = r.Driver?.User?.FullName ?? "Unknown Driver",
                     VehicleModel = r.Vehicle?.Model ?? "Unknown Vehicle",
                     RouteStops = string.IsNullOrEmpty(r.RouteStops)

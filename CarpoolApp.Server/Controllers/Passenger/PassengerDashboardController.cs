@@ -28,15 +28,11 @@ namespace CarpoolApp.Server.Controllers.Passenger
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null)
-            {
                 return Unauthorized("Invalid passenger credentials.");
-            }
 
             var passenger = _context.Passengers.FirstOrDefault(p => p.UserId == int.Parse(userId));
             if (passenger == null)
-            {
                 return NotFound("Passenger record not found.");
-            }
 
             var availableRides = _context.Rides
                 .Include(r => r.Driver)
@@ -64,23 +60,7 @@ namespace CarpoolApp.Server.Controllers.Passenger
                 })
                 .ToList();
 
-            if (availableRides.Any())
-            {
-                foreach (var ride in availableRides)
-                {
-                    Console.WriteLine($"RideId: {ride.RideId}, Origin: {ride.Origin}, Destination: {ride.Destination}, " +
-                                      $"DepartureTime: {ride.DepartureTime}, AvailableSeats: {ride.AvailableSeats}, " +
-                                      $"PricePerSeat: {ride.PricePerSeat}, DriverName: {ride.DriverName}, " +
-                                      $"VehicleModel: {ride.VehicleModel}, RideRequestStatus: {ride.RideRequestStatus}, " +
-                                      $"RouteStops: {string.Join(", ", ride.RouteStops)}");
-                }
-            }
-            else
-            {
-                Console.WriteLine("No available rides found.");
-            }
-
-                return Ok(availableRides);
-            }
+            return Ok(availableRides);
         }
+    }
 }
