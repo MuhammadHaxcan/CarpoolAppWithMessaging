@@ -6,13 +6,12 @@ export default function PassengerDashboard() {
     const [rides, setRides] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [loading, setLoading] = useState(true);
-    //const [requestStatuses, setRequestStatuses] = useState({}); // Track ride request status
     const [pickupLocation, setPickupLocation] = useState("");
     const [dropoffLocation, setDropoffLocation] = useState("");
-    //const [searchResults, setSearchResults] = useState([]);
     const [rideLocationsMap, setRideLocationsMap] = useState({});
     const [customPickup, setCustomPickup] = useState(false);
     const [customDropoff, setCustomDropoff] = useState(false);
+    const [acceptedRideId, setAcceptedRideId] = useState(null); // Track accepted ride ID
 
     const navigate = useNavigate();
     const token = localStorage.getItem("token");
@@ -24,18 +23,19 @@ export default function PassengerDashboard() {
             return;
         }
 
-        const fetchAvailableRides = async () => {
-            try {
-                const res = await axios.get("/api/passengerdashboard/available-rides", {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+            const fetchAvailableRides = async () => {
+                try {
+                    const res = await axios.get("/api/passengerdashboard/available-rides", {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
 
-                const ridesData = res.data;
-                setRides(ridesData);
-                setLoading(false);
+                    // ✅ Filter out accepted rides, keep only available rides
+                    const filteredRides = res.data.filter(ride => ride.rideRequestStatus !== "Accepted");
+                    setRides(filteredRides);
+                    setLoading(false);
 
                 // Fetch ride locations for each ride
-                for (const ride of ridesData) {
+                for (const ride of filteredRides) {
                     const locationRes = await axios.get(`/api/booking/ride-locations/${ride.rideId}`, {
                         headers: { Authorization: `Bearer ${token}` },
                     });
@@ -77,6 +77,7 @@ export default function PassengerDashboard() {
 
             if (res.data.success) {
                 alert("Ride request sent successfully!");
+                setAcceptedRideId(rideId); // Set accepted ride ID after success
             } else {
                 throw new Error("Ride request failed.");
             }
@@ -88,6 +89,10 @@ export default function PassengerDashboard() {
                 )
             );
         }
+    };
+
+    const handleViewProfile = () => {
+        navigate("/passenger-profile");
     };
 
     if (loading) return <p>Loading available rides...</p>;
@@ -182,19 +187,22 @@ export default function PassengerDashboard() {
                                     {customDropoff ? "Use Dropdown" : "Custom Dropoff"}
                                 </button>
                             </div>
-                        <button
-                            onClick={() => sendRideRequest(ride.rideId, ride.origin, ride.destination)}
-                            disabled={ride.rideRequestStatus === "Pending" || ride.rideRequestStatus === "Accepted"}
-                        >
-                            {ride.rideRequestStatus === "Denied" ? "Send Request Again" : ride.rideRequestStatus || "Send Request"}
-                        </button>
-                        <hr />
-                    </div>
+
+                            <button
+                                onClick={() => sendRideRequest(ride.rideId, ride.origin, ride.destination)}
+                                disabled={ride.rideRequestStatus === "Pending"}
+                            >
+                                {ride.rideRequestStatus === "Denied" ? "Send Request Again" : ride.rideRequestStatus || "Send Request"}
+                            </button>
+
+                            <hr />
+                        </div>
                     );
                 })
             ) : (
                 <p>No available rides.</p>
             )}
+            <button onClick={handleViewProfile}>View Profile</button>
         </div>
     );
 }
