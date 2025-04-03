@@ -62,5 +62,44 @@ namespace CarpoolApp.Server.Controllers.Passenger
 
             return Ok(availableRides);
         }
+
+        [HttpGet("accepted-rides")]
+        public IActionResult GetAcceptedRides()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+                return Unauthorized("Invalid passenger credentials.");
+
+            var passenger = _context.Passengers.FirstOrDefault(p => p.UserId == int.Parse(userId));
+            if (passenger == null)
+                return NotFound("Passenger record not found.");
+
+            var acceptedRides = _context.Rides
+                .Include(r => r.Driver)
+                    .ThenInclude(d => d.User)
+                .Include(r => r.Vehicle)
+                .Where(r => _context.RideRequests.Any(rr => rr.RideId == r.RideId
+                                                            && rr.PassengerId == passenger.PassengerId
+                                                            && rr.Status == RideRequestStatus.Accepted))
+                .AsEnumerable()
+                .Select(r => new
+                {
+                    r.RideId,
+                    r.Origin,
+                    r.Destination,
+                    DepartureTime = r.DepartureTime,
+                    r.AvailableSeats,
+                    r.PricePerSeat,
+                    DriverName = r.Driver?.User?.FullName ?? "Unknown Driver",
+                    VehicleModel = r.Vehicle?.Model ?? "Unknown Vehicle",
+                    RouteStops = string.IsNullOrEmpty(r.RouteStops)
+                        ? new List<string>()
+                        : JsonSerializer.Deserialize<List<string>>(r.RouteStops),
+                })
+                .ToList();
+
+            return Ok(acceptedRides);
+        }
+
     }
 }
