@@ -195,6 +195,11 @@ export default function PassengerDashboard() {
             ) : (
                 <p>No available rides.</p>
             )}
+            <div style={{ marginTop: "30px" }}>
+                <button onClick={() => navigate("/passenger/profile")}>
+                    View Accepted Rides
+                </button>
+            </div>
         </div>
     );
 }

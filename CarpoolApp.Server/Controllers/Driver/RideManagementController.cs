@@ -27,8 +27,7 @@ namespace CarpoolApp.Server.Controllers.Driver
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // Get driver in a single query with eager loading of vehicles
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var driver = await _context.Drivers
                 .Include(d => d.Vehicles)
                 .FirstOrDefaultAsync(d => d.UserId == userId);
@@ -36,7 +35,6 @@ namespace CarpoolApp.Server.Controllers.Driver
             if (driver == null)
                 return NotFound("Driver not found.");
 
-            // Check vehicle ownership from the already loaded vehicles collection
             var vehicle = driver.Vehicles?.FirstOrDefault(v => v.VehicleId == dto.VehicleId);
             if (vehicle == null)
                 return BadRequest("Invalid vehicle selection or vehicle not owned by this driver.");
@@ -56,8 +54,27 @@ namespace CarpoolApp.Server.Controllers.Driver
             _context.Rides.Add(ride);
             await _context.SaveChangesAsync();
 
+            var conversation = new Conversation
+            {
+                RideId = ride.RideId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Conversations.Add(conversation);
+            await _context.SaveChangesAsync(); // Save to generate ConversationId
+
+            var member = new ConversationMember
+            {
+                ConversationId = conversation.ConversationId,
+                UserId = userId
+            };
+
+            _context.ConversationMembers.Add(member);
+            await _context.SaveChangesAsync();
+
             return Ok(new { success = true, message = "Ride created successfully.", rideId = ride.RideId });
         }
+
 
         [HttpGet("accepted-passengers/{rideId}")]
         public async Task<IActionResult> GetAcceptedPassengers(int rideId)

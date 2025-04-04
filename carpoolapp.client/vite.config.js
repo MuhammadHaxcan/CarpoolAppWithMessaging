@@ -50,6 +50,11 @@ export default defineConfig({
             '^/api': {
                 target,
                 secure: false
+            },
+            '^/hubs': {
+                target,
+                secure: false,
+                ws: true // WebSocket support for SignalR
             }
         },
         port: parseInt(env.DEV_SERVER_PORT || '49828'),

@@ -35,6 +35,7 @@ public class DriverDashboardController : ControllerBase
                     availableSeats = r.AvailableSeats,
                     pricePerSeat = r.PricePerSeat,
                     vehicle = $"{r.Vehicle.Make} {r.Vehicle.Model}",
+                    routestops = r.RouteStops,
                     requests = r.RideRequests
                         .Where(req => req.Status == RideRequestStatus.Pending)
                         .Select(req => new

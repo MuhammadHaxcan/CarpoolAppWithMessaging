@@ -5,7 +5,8 @@ import DriverDashboard from './components/DriverDashboard';
 import PassengerDashboard from './components/PassengerDashboard';
 import DriverProfile from './components/DriverProfile';
 import CreateRidePage from './components/CreateRidePage';
-
+import PassengerProfile from './components/PassengerProfile';
+import ChatPage from './components/ChatPage';
 
 function App() {
     return (
@@ -17,6 +18,8 @@ function App() {
                 <Route path="/passenger-dashboard" element={<PassengerDashboard />} />
                 <Route path="/driver-profile" element={<DriverProfile />} />
                 <Route path="/create-ride" element={<CreateRidePage />} />
+                <Route path="/passenger/profile" element={<PassengerProfile />} />
+                <Route path="/chat/:rideId" element={<ChatPage />} />
             </Routes>
         </Router>
     );

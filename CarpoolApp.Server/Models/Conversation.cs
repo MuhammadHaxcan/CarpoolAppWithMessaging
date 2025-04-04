@@ -11,7 +11,7 @@ namespace CarpoolApp.Server.Models
         public int? RideId { get; set; }
         public Ride? Ride { get; set; }
 
-        [Required(ErrorMessage = "A conversation must have at least one member.")]
+       // [Required(ErrorMessage = "A conversation must have at least one member.")]
         public ICollection<ConversationMember> Members { get; set; } = new List<ConversationMember>();
 
         public ICollection<Message> Messages { get; set; } = new List<Message>();

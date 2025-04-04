@@ -4,6 +4,7 @@ using CarpoolApp.Server.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using CarpoolApp.Server.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,7 +14,7 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
+builder.Services.AddSignalR();
 // Add DbContext with connection string
 builder.Services.AddDbContext<CarpoolDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("CarpoolDatabase"))
@@ -41,8 +42,6 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-
-
 var app = builder.Build();
 
 app.UseDefaultFiles();
@@ -61,9 +60,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
 app.MapFallbackToFile("/index.html");
-
-
+app.MapHub<ChatHub>("/hubs/chat");
 
 app.Run();
