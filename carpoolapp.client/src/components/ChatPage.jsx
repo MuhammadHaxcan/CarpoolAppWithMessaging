@@ -14,14 +14,12 @@ export default function ChatPage() {
     const scrollRef = useRef(null);
     const hubConnectionRef = useRef(null);
 
-    // Initialize SignalR connection
     useEffect(() => {
         if (!token) {
             navigate("/");
             return;
         }
 
-        // Create SignalR connection
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("/hubs/chat", {
                 accessTokenFactory: () => token
@@ -29,37 +27,33 @@ export default function ChatPage() {
             .withAutomaticReconnect()
             .build();
 
-        // Handle receiving messages
-        connection.on("ReceiveMessage", (messageId, content, senderName, sentAt) => {
-            console.log("Received via SignalR:", content);
-            setMessages(prev => [
-                ...prev,
-                { messageId, content, senderName, sentAt }
-            ]);
-        });
-
-
-        // Start the connection
         const startConnection = async () => {
             try {
                 await connection.start();
                 console.log("SignalR Connected");
 
-                // Join the ride group
+                // Ensure group join
                 await connection.invoke("JoinRideGroup", rideId.toString());
-            }
-            catch (err) {
+            } catch (err) {
                 console.error("SignalR Connection Error: ", err);
                 setTimeout(startConnection, 5000);
             }
         };
 
-        startConnection();
+        // Clear previous handlers before adding new one
+        connection.off("ReceiveMessage");
+        connection.on("ReceiveMessage", (messageId, content, senderName, sentAt) => {
+            console.log("Received via SignalR:", content);
+            setMessages(prev => {
+                // Prevent adding duplicate messageId
+                if (prev.some(m => m.messageId === messageId)) return prev;
+                return [...prev, { messageId, content, senderName, sentAt }];
+            });
+        });
 
-        // Store the connection reference
+        startConnection();
         hubConnectionRef.current = connection;
 
-        // Clean up on unmount
         return () => {
             if (connection) {
                 connection.invoke("LeaveRideGroup", rideId.toString())
@@ -68,6 +62,7 @@ export default function ChatPage() {
             }
         };
     }, [rideId, token, navigate]);
+
 
     // Fetch messages when page loads
     useEffect(() => {
