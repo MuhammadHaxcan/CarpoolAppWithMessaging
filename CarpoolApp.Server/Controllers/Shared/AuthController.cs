@@ -8,7 +8,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.Data;
+using System.Collections.Concurrent;
+using CarpoolApp.Server.Services;
 
 namespace CarpoolApp.Server.Controllers.Shared
 {
@@ -18,11 +19,42 @@ namespace CarpoolApp.Server.Controllers.Shared
     {
         private readonly CarpoolDbContext _context;
         private readonly IConfiguration _configuration;
+        private static readonly ConcurrentDictionary<string, string> OtpStore = new();
+        private readonly EmailService _emailService;
 
-        public AuthController(CarpoolDbContext context, IConfiguration configuration)
+        public AuthController(CarpoolDbContext context, IConfiguration configuration, EmailService emailService)
         {
             _context = context;
             _configuration = configuration;
+            _emailService = emailService;
+        }
+
+        [HttpPost("send-otp")]
+        public async Task<IActionResult> SendOtp([FromBody] OtpRequestDto dto)
+        {
+            if (string.IsNullOrEmpty(dto?.UniversityEmail))
+                return BadRequest(new { success = false, message = "Email is required." });
+
+            if (await _context.Users.AnyAsync(u => u.UniversityEmail == dto.UniversityEmail))
+                return BadRequest(new { success = false, message = "Email already exists." });
+
+            string otp = new Random().Next(100000, 999999).ToString();
+            OtpStore[dto.UniversityEmail] = otp;
+
+            await _emailService.SendOtpEmailAsync(dto.UniversityEmail, otp);
+            return Ok(new { success = true, message = "OTP sent successfully." });
+        }
+
+        [HttpPost("verify-otp")]
+        public IActionResult VerifyOtp([FromBody] OtpVerificationDto dto)
+        {
+            if (OtpStore.TryGetValue(dto.UniversityEmail, out var validOtp) && dto.Otp == validOtp)
+            {
+                OtpStore[dto.UniversityEmail] = "verified";
+                return Ok(new { success = true, message = "OTP verified successfully." });
+            }
+
+            return BadRequest(new { success = false, message = "Invalid OTP." });
         }
 
         [HttpPost("register")]
@@ -30,6 +62,9 @@ namespace CarpoolApp.Server.Controllers.Shared
         {
             if (await _context.Users.AnyAsync(u => u.UniversityEmail == dto.UniversityEmail))
                 return BadRequest(new { success = false, message = "Email already exists." });
+
+            if (!OtpStore.TryGetValue(dto.UniversityEmail, out var otpStatus) || otpStatus != "verified")
+                return BadRequest(new { success = false, message = "OTP not verified." });
 
             var hasher = new PasswordHasher<User>();
 
@@ -45,6 +80,8 @@ namespace CarpoolApp.Server.Controllers.Shared
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
+
+            OtpStore.TryRemove(dto.UniversityEmail, out _);
 
             return Ok(new { success = true, message = "User registered successfully." });
         }
@@ -66,7 +103,6 @@ namespace CarpoolApp.Server.Controllers.Shared
             if (result != PasswordVerificationResult.Success)
                 return Unauthorized(new { success = false, message = "Invalid email or password." });
 
-            // Handle role-based creation
             if (dto.Role.ToLower() == "driver" && user.Driver == null)
             {
                 _context.Drivers.Add(new Models.Driver { UserId = user.UserId });
@@ -74,13 +110,11 @@ namespace CarpoolApp.Server.Controllers.Shared
             }
             else if (dto.Role.ToLower() == "passenger" && user.Passenger == null)
             {
-                _context.Passengers.Add(new Models.Passenger{ UserId = user.UserId });
+                _context.Passengers.Add(new Models.Passenger { UserId = user.UserId });
                 await _context.SaveChangesAsync();
             }
 
             var token = GenerateJwtToken(user, dto.Role.ToLower());
-
-            Console.WriteLine();
 
             return Ok(new
             {
@@ -90,15 +124,15 @@ namespace CarpoolApp.Server.Controllers.Shared
                 userId = user.UserId,
                 role = dto.Role
             });
-
         }
+
         private string GenerateJwtToken(User user, string role)
         {
             var claims = new[]
             {
-            new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-            new Claim(ClaimTypes.Email, user.UniversityEmail),
-            new Claim(ClaimTypes.Role, role)
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                new Claim(ClaimTypes.Email, user.UniversityEmail),
+                new Claim(ClaimTypes.Role, role)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
@@ -114,6 +148,16 @@ namespace CarpoolApp.Server.Controllers.Shared
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+    }
 
+    public class OtpRequestDto
+    {
+        public string UniversityEmail { get; set; }
+    }
+
+    public class OtpVerificationDto
+    {
+        public string UniversityEmail { get; set; }
+        public string Otp { get; set; }
     }
 }

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using CarpoolApp.Server.Hubs;
+using CarpoolApp.Server.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +16,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSignalR();
+builder.Services.AddScoped<EmailService>();
+
 // Add DbContext with connection string
 builder.Services.AddDbContext<CarpoolDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("CarpoolDatabase"))
